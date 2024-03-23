@@ -1,7 +1,10 @@
 // const hhtp = require("http");
+require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+
+const Note = require("./models/note");
 
 // morgan.token("body", function getBody(req, res) {
 //   return req.body;
@@ -48,17 +51,21 @@ app.get("/", (request, response) => {
 });
 
 app.get("/api/notes", (request, response) => {
-  response.json(notes);
+  // response.json(notes);
+  console.log("Notes...");
+  Note.find({}).then((notes) => response.json(notes));
 });
 
 app.get("/api/notes/:id", (request, response) => {
   const id = Number(request.params.id);
-  const note = notes.find((note) => note.id === id);
-  if (note) {
-    response.json(note);
-  } else {
-    response.status(404).end();
-  }
+  Note.findById(request.params.id).then((note) => response.json(note));
+
+  // const note = notes.find((note) => note.id === id);
+  // if (note) {
+  //   response.json(note);
+  // } else {
+  //   response.status(404).end();
+  // }
 });
 
 app.delete("/api/notes/:id", (request, response) => {
@@ -74,15 +81,16 @@ app.post("/api/notes", (request, response) => {
     return response.status(400).json({ error: "content missing" });
   }
 
-  const note = {
+  const note = new Note({
     content: body.content,
-    important: Boolean(body.important) || false,
-    id: generatedId(),
-  };
+    important: body.important || false,
+  });
 
-  notes = notes.concat(note);
-
-  response.json(note);
+  // notes = notes.concat(note);
+  // response.json(note);
+  note.save().then((savedNote) => {
+    response.json(savedNote);
+  });
 });
 
 function unknownEndpoint(request, response) {
@@ -91,7 +99,7 @@ function unknownEndpoint(request, response) {
 
 app.use(unknownEndpoint);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 // app.listen(PORT);
 // console.log(`Server running on port ${PORT}`);
 app.listen(PORT, () => {
